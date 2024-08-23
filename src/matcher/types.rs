@@ -1,6 +1,6 @@
 use std::fmt::format;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum BidOrAsk {
     Bid,
     Ask,

@@ -1,6 +1,6 @@
 use crate::matcher::types::BidOrAsk;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Order {
     pub size: f64,
     pub order_type: BidOrAsk,
@@ -17,7 +17,7 @@ impl Order {
     pub fn is_filled(&self) -> bool {
         match self.size == 0.0 {
             true => return true,
-            false => return false
+            false => return false,
         }
     }
 }

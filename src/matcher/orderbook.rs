@@ -44,6 +44,35 @@ impl Orderbook {
             }
         }
     }
+
+    fn ask_limits(&mut self) -> Vec<&mut Limit> {
+        self.asks.values_mut().collect::<Vec<&mut Limit>>()
+    }
+
+    fn bid_limits(&mut self) -> Vec<&mut Limit> {
+        self.bids.values_mut().collect::<Vec<&mut Limit>>()
+    }
+
+    pub fn fill_market_order(&mut self, market_order: &mut Order) {
+        match market_order.order_type {
+            BidOrAsk::Ask => {
+                for limit_order in self.bid_limits() {
+                    limit_order.fill_order(market_order);
+                    if market_order.is_filled() {
+                        break;
+                    }
+                }
+            }
+            BidOrAsk::Bid => {
+                for limit_order in self.ask_limits() {
+                    limit_order.fill_order(market_order);
+                    if market_order.is_filled() {
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
 
 // #[cfg(test)]
