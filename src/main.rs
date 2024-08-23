@@ -1,113 +1,34 @@
-use std::collections::HashMap;
-
-#[derive(Debug)]
-struct Order {
-    size: f64,
-    order_type: BidOrAsk,
-}
-
-impl Order {
-    fn new(order_type: BidOrAsk, order_size: f64) -> Self {
-        Order {
-            size: order_size,
-            order_type,
-        }
-    }
-}
-
-#[derive(Debug, Eq, Hash, PartialEq)]
-struct Price {
-    integer: u64,
-    fractional: u64,
-    scalar: u64,
-}
-
-impl Price {
-    fn new(price: f64) -> Self {
-        let scalar = 100000;
-        let integer = price as u64;
-        let fractional = ((price % 1.0) * scalar as f64) as u64;
-        Price {
-            integer,
-            fractional,
-            scalar,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct Limit {
-    price: Price,
-    orders: Vec<Order>,
-}
-
-impl Limit {
-    fn new(price: f64) -> Self {
-        Limit {
-            price: Price::new(price),
-            orders: Vec::new(),
-        }
-    }
-
-    fn add_order(&mut self, order: Order) {
-        // let new_order = Order::new(order_type, size);
-        self.orders.push(order);
-    }
-}
-
-#[derive(Debug)]
-enum BidOrAsk {
-    Bid,
-    Ask,
-}
-
-#[derive(Debug)]
-struct Orderbook {
-    asks: HashMap<Price, Limit>,
-    bids: HashMap<Price, Limit>,
-}
-
-impl Orderbook {
-    fn new() -> Self {
-        Orderbook {
-            asks: HashMap::new(),
-            bids: HashMap::new(),
-        }
-    }
-
-    fn add_order(&mut self,price: f64,  order: Order) {
-        let order_price = Price::new(price);
-          match order.order_type {
-            BidOrAsk::Ask => {
-                todo!()
-            }
-            BidOrAsk::Bid => {
-                // let limit = self.bids.get_mut(&order_price);
-                match self.bids.get_mut(&order_price) {
-                    Some(limit) => {
-                        limit.orders.push(order)
-                    }
-                    None => {
-                        // todo!()
-                        // let dereferenced_limit = limit.unwrap();
-                        let mut limit = Limit::new(price);
-                        limit.add_order(order);
-                        self.bids.insert(order_price, limit);
-                    }
-                }
-            }
-          }
-    }
-}
+mod matcher;
+use crate::matcher::order::Order;
+use crate::matcher::types::BidOrAsk;
+use matcher::engine::MatchingEngine;
+use matcher::orderbook::Orderbook;
+use matcher::types::TradingPair;
 
 fn main() {
-    let price = Price::new(23.4);
-    println!("{:?}", price);
+    let buy_order_from_alice = Order::new(BidOrAsk::Bid, 50.5);
+    let buy_order_from_bob = Order::new(BidOrAsk::Bid, 25.5);
+    // TO DO: create order endpoint so you can post order with the right auth
 
-    let mut limit = Limit::new(23.4);
-    println!("{:?}", &limit);
+    let mut orderbook = Orderbook::new();
+    orderbook.add_order(4.4, buy_order_from_alice); // in a real world, price would be a GET call.
+    orderbook.add_order(4.4, buy_order_from_bob);
 
-    // limit.add_order(500.5, BidOrAsk::Ask);
-    // limit.add_order(200.0, BidOrAsk::Bid);
-    println!("{:?}", &limit);
+    let sell_order_from_alice = Order::new(BidOrAsk::Ask, 20.5);
+    orderbook.add_order(5.0, sell_order_from_alice);
+
+    // println!("{:?}", &orderbook);
+
+    let mut engine = MatchingEngine::new();
+    let pair = TradingPair::new("BTC".to_string(), "USD".to_string());
+    engine.add_new_market(pair.clone());
+
+    let new_buy_order = Order::new(BidOrAsk::Bid, 200.0);
+    let eth_pair = TradingPair::new("ETH".to_string(), "USD".to_string());
+    let result = engine
+        .place_limit_order(pair, 2500.0, new_buy_order)
+        .unwrap();
+    println!("The result is: {:?}", result);
+
+    println!("Machine engine: {:?}", engine);
 }
